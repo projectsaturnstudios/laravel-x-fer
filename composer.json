@@ -1,0 +1,47 @@
+{
+    "name": "projectsaturnstudios/laravel-x-fer",
+    "description": "Transfer files between servers using SFTP or AWS S3",
+    "type": "library",
+    "version": "0.0.1",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Project Saturn Studios, LLC",
+            "email": "angel@projectsaturnstudios.com"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "spatie/laravel-data": "^4.11",
+        "league/flysystem-sftp-v3": "^3.28",
+        "lorisleiva/laravel-actions": "^2.6",
+        "league/flysystem-aws-s3-v3": "^3.28",
+        "projectsaturnstudios/pocketflow-php": "^0.1.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "ProjectSaturnStudios\\XFer\\": "src"
+        },
+        "files": [
+            "src/Helpers/functions.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "ProjectSaturnStudios\\XFer\\Tests\\": "tests"
+        }
+    },
+    "minimum-stability": "stable",
+    "extra": {
+        "laravel": {
+            "providers": [
+                "ProjectSaturnStudios\\XFer\\Providers\\XFerServiceProvider"
+            ],
+            "aliases": {}
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit",
+        "format": "vendor/bin/pint"
+    }
+}
