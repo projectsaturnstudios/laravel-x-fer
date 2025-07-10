@@ -2,7 +2,7 @@
     "name": "projectsaturnstudios/laravel-x-fer",
     "description": "Transfer files between servers using SFTP or AWS S3",
     "type": "library",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "license": "MIT",
     "authors": [
         {
