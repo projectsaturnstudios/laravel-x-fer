@@ -2,7 +2,7 @@
     "name": "projectsaturnstudios/laravel-x-fer",
     "description": "Transfer files between servers using SFTP or AWS S3",
     "type": "library",
-    "version": "0.0.2",
+    "version": "0.1.0",
     "license": "MIT",
     "authors": [
         {
@@ -12,36 +12,56 @@
     ],
     "require": {
         "php": "^8.2",
-        "spatie/laravel-data": "^4.11",
+        "illuminate/contracts": "^11.0|^12.0",
+        "illuminate/events": "^11.0|^12.0",
+        "illuminate/filesystem": "^11.0|^12.0",
+        "spatie/laravel-data": "^4.0",
         "league/flysystem-sftp-v3": "^3.28",
-        "lorisleiva/laravel-actions": "^2.6",
-        "league/flysystem-aws-s3-v3": "^3.28",
-        "projectsaturnstudios/pocketflow-php": "^0.1.1"
+        "league/flysystem-aws-s3-v3": "^3.28"
+    },
+    "require-dev": {
+        "mockery/mockery": "^1.6",
+        "orchestra/testbench": "*",
+        "pestphp/pest": "*",
+        "pestphp/pest-plugin-laravel": "*",
+        "phpunit/phpunit": "^10.5"
     },
     "autoload": {
         "psr-4": {
-            "ProjectSaturnStudios\\XFer\\": "src"
-        },
-        "files": [
-            "src/Helpers/functions.php"
-        ]
+            "ProjectSaturnStudios\\Xfer\\": "src"
+        }
     },
     "autoload-dev": {
         "psr-4": {
-            "ProjectSaturnStudios\\XFer\\Tests\\": "tests"
+            "ProjectSaturnStudios\\Xfer\\Tests\\": "tests"
         }
     },
     "minimum-stability": "stable",
     "extra": {
         "laravel": {
             "providers": [
-                "ProjectSaturnStudios\\XFer\\Providers\\XFerServiceProvider"
-            ],
-            "aliases": {}
+                "ProjectSaturnStudios\\Xfer\\Providers\\XferServiceProvider"
+            ]
         }
     },
     "scripts": {
         "test": "vendor/bin/phpunit",
+        "test-coverage": "vendor/bin/phpunit --coverage-html coverage",
+        "test-clover": "vendor/bin/phpunit --coverage-clover coverage.xml",
         "format": "vendor/bin/pint"
-    }
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    },
+    "keywords": [
+        "laravel",
+        "file-transfer",
+        "sftp",
+        "s3",
+        "filesystem",
+        "xfer"
+    ]
 }
