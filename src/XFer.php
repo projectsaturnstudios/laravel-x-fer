@@ -1,29 +1,54 @@
 <?php
 
-namespace ProjectSaturnStudios\XFer;
+namespace ProjectSaturnStudios\Xfer;
 
-use ProjectSaturnStudios\XFer\Actions\Transfers\SourceToDestinationService;
+use DomainException;
+use ProjectSaturnStudios\Xfer\Contracts\RequestFactoryInterface;
+use ProjectSaturnStudios\Xfer\Contracts\TransferActionInterface;
+use ProjectSaturnStudios\Xfer\Contracts\TransferResultInterface;
+use ProjectSaturnStudios\Xfer\Contracts\TransferRequestInterface;
+use ProjectSaturnStudios\Xfer\Contracts\RecipientDetailsInterface;
+use ProjectSaturnStudios\Xfer\Contracts\ReadableFileResourceInterface;
+use ProjectSaturnStudios\Xfer\Contracts\FileTransferOrchestratorInterface;
 
-class XFer
+class Xfer implements FileTransferOrchestratorInterface
 {
-    protected ?FileObject $from;
+    protected string $state = 'uninitialized';
 
-    public function from(string $source_file, ?string $source_disk = null): static
-    {
-        $source_disk = $source_disk ?? config('file-transfers.source_disk', 'stfp');
-        $this->from = new FileObject($source_disk, $source_file);
-        return $this;
+    public function __construct(
+       protected readonly RequestFactoryInterface $request_factory,
+       protected readonly TransferActionInterface $action,
+       protected readonly ?TransferRequestInterface $request = null,
+    ) {
+        if(empty($this->request)) $this->state = 'uninitialized';
+        elseif($this->request->ready()) $this->state = 'ready';
+        else $this->state = 'pending';
     }
 
-    public function to(string $source_file, ?string $source_disk = null): void
+    public function from(ReadableFileResourceInterface $source): static
     {
-        $source_disk = $source_disk ?? config('file-transfers.destination_disk', 's3');
-        $to = new FileObject($source_disk, $source_file);
-        (new SourceToDestinationService)->handle($to, $this->from);
+        $req = $this->request;
+        $req ??= $this->request_factory->make();
+        $req = $req->source($source);
+        return new static($this->request_factory, $this->action, $req);
     }
 
-    public static function boot(): void
+    public function to(RecipientDetailsInterface $destination): static
     {
-        app()->instance('stream-file', new static());
+        $req = $this->request;
+        $req ??= $this->request_factory->make();
+        $req = $req->destination($destination);
+        return new static($this->request_factory, $this->action, $req);
+    }
+
+    public function transfer(): TransferResultInterface
+    {
+        if(!$this->request?->ready()) throw new DomainException("Transfer request is not ready for transfer.");
+        return $this->action->transfer($this->request);
+    }
+
+    public function ready(): bool
+    {
+        return $this->state == 'ready';
     }
 }
