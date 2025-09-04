@@ -8,7 +8,7 @@ use ProjectSaturnStudios\Xfer\Projectors\FileTransferLogProjector;
 use Spatie\EventSourcing\Exceptions\InvalidEventHandler;
 use Spatie\EventSourcing\Projectionist;
 
-class XferServiceProvider extends BaseServiceProvider
+class XFerServiceProvider extends BaseServiceProvider
 {
     protected array $config = [
         'file-transfers' => __DIR__ . '/../../config/file-transfers.php',
