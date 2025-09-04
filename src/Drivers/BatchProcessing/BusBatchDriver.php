@@ -4,7 +4,7 @@ namespace ProjectSaturnStudios\Xfer\Drivers\BatchProcessing;
 
 use Illuminate\Support\Facades\Bus;
 use ProjectSaturnStudios\Xfer\Contracts\FileObject;
-use ProjectSaturnStudios\Xfer\Xfer;
+use ProjectSaturnStudios\Xfer\XFer as Xfer;
 
 class BusBatchDriver extends BatchProcessingDriver
 {

@@ -2,7 +2,7 @@
 
 namespace ProjectSaturnStudios\Xfer\Support\Facades;
 
-use ProjectSaturnStudios\Xfer\Xfer;
+use ProjectSaturnStudios\Xfer\XFer as Xfer;
 use Illuminate\Support\Facades\Facade;
 
 class CopyFile extends Facade
