@@ -2,81 +2,59 @@
 
 namespace ProjectSaturnStudios\Xfer\Providers;
 
-use InvalidArgumentException;
-use ProjectSaturnStudios\Xfer\Xfer;
-use Illuminate\Container\Container;
-use Illuminate\Support\ServiceProvider;
-use Illuminate\Contracts\Events\Dispatcher;
-use Illuminate\Contracts\Filesystem\Factory;
-use ProjectSaturnStudios\Xfer\DTO\TransferRequest;
-use ProjectSaturnStudios\Xfer\DTO\RecipientDetails;
-use ProjectSaturnStudios\Xfer\Actions\TransferAction;
-use ProjectSaturnStudios\Xfer\DTO\ReadableFileResource;
-use ProjectSaturnStudios\Xfer\Builders\TransferRequestFactory;
-use ProjectSaturnStudios\Xfer\Contracts\TransferActionInterface;
-use ProjectSaturnStudios\Xfer\Contracts\RequestFactoryInterface;
-use ProjectSaturnStudios\Xfer\Contracts\TransferRequestInterface;
-use ProjectSaturnStudios\Xfer\Contracts\RecipientDetailsInterface;
-use ProjectSaturnStudios\Xfer\Contracts\ReadableFileResourceInterface;
-use ProjectSaturnStudios\Xfer\Contracts\FileTransferOrchestratorInterface;
+use ProjectSaturnStudios\LaravelDesignPatterns\Providers\BaseServiceProvider;
+use ProjectSaturnStudios\Xfer\Managers\BatchProcessingManager;
+use ProjectSaturnStudios\Xfer\Projectors\FileTransferLogProjector;
+use Spatie\EventSourcing\Exceptions\InvalidEventHandler;
+use Spatie\EventSourcing\Projectionist;
 
-class XferServiceProvider extends ServiceProvider
+class XferServiceProvider extends BaseServiceProvider
 {
     protected array $config = [
         'file-transfers' => __DIR__ . '/../../config/file-transfers.php',
     ];
 
-    protected array $commands = [
-        //FileExodusCommand::class,
+    protected array $publishable_config = [
+        ['key' => 'file-transfers', 'file_path' => __DIR__ . '/../../config/file-transfers.php', 'groups' => ['file-transfers']],
     ];
 
-    public function register(): void
+    protected array $commands = [];
+
+    protected array $bootables = [
+        BatchProcessingManager::class
+    ];
+
+    protected array $migrations = [
+        'file_transfer_logs'
+    ];
+
+    /**
+     * @return void
+     * @throws InvalidEventHandler
+     */
+    protected function mainBooted(): void
     {
-        $this->registerConfigs();
+        $this->publishMigrations();
+        app(Projectionist::class)->addProjector(FileTransferLogProjector::class);
     }
 
-    public function boot(): void
+    public function publishMigrations() : void
     {
-        $this->publishConfigs();
-        $this->registerContainerObjects();
-        $this->commands($this->commands);
-    }
+        foreach ($this->migrations as $module_table_name) {
+            $modules = collect(scandir(base_path('database/migrations')))->filter(function($item) use($module_table_name) {
+                return str_contains($item, "create_{$module_table_name}_table");
+            })->toArray();
 
-    public function registerContainerObjects(): void
-    {
-        $this->app->bind(RecipientDetailsInterface::class, fn() => new RecipientDetails());
-        $this->app->bind(ReadableFileResourceInterface::class, fn() => new ReadableFileResource());
-        $this->app->bind(TransferRequestInterface::class, function(Container $app, array $args) {
-            if(($args[0] ?? false) && (!$args[0] instanceof ReadableFileResourceInterface)) throw new InvalidArgumentException('First argument must be an instance of ReadableFileResourceInterface');
-            if(($args[1] ?? false) && (!$args[1] instanceof RecipientDetailsInterface)) throw new InvalidArgumentException('Second argument must be an instance of RecipientDetailsInterface');
-            return new TransferRequest($args[0] ?? null, $args[1] ?? null);
-        });
+            if(empty($modules))
+            {
+                $timestamp = date('Y_m_d_His', time());
+                $stub = __DIR__."/../../database/migrations/create_{$module_table_name}_table.php";
+                $target = $this->app->databasePath().'/migrations/'.$timestamp."_create_{$module_table_name}_table.php";
 
-        $reference = resolve(TransferRequestInterface::class);
-        $this->app->bind(RequestFactoryInterface::class, fn() => new TransferRequestFactory($reference::class));
-        $this->app->bind(TransferActionInterface::class, fn() => new TransferAction(resolve(Factory::class), resolve(Dispatcher::class)));
-
-        $this->app->bind(FileTransferOrchestratorInterface::class, function(Container $app, array $args) {
-            if(($args[0] ?? false) && (!$args[0] instanceof TransferRequestInterface)) throw new InvalidArgumentException('First argument must be an instance of TransferRequestInterface');
-            return new Xfer(
-                request_factory: resolve(RequestFactoryInterface::class),
-                action: resolve(TransferActionInterface::class),
-                request: $args[0] ?? null
-            );
-        });
-    }
-
-    protected function publishConfigs() : void
-    {
-        $this->publishes([
-            $this->config['file-transfers'] => config_path('file-transfers.php'),
-        ], 'xfer');
-    }
-
-    protected function registerConfigs() : void
-    {
-        foreach ($this->config as $key => $path) {
-            $this->mergeConfigFrom($path, $key);
+                $this->publishes([$stub => $target], "xfer.migrations.all");
+                $this->publishes([$stub => $target], "xfer.migrations.{$module_table_name}");
+            }
         }
     }
+
 }
